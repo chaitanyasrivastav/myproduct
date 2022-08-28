@@ -1,24 +1,43 @@
-from http.client import CREATED
+from http.client import CREATED, NO_CONTENT, OK
 from django.contrib.auth.models import User
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from rest_framework.parsers import JSONParser
-from myproduct.custom_exceptions import AlreadyExistsError
+from myproduct.custom_exceptions import AlreadyExistsError, NotFoundError, InternalServerError
 from .serializers import UserSerializer
 from rest_framework.decorators import api_view
 
 # Create your views here.
 @api_view(["POST"])
 def create_user(request):
-    response_data = {}
     request_data = JSONParser().parse(request)
-    username = request_data["firstName"]
-    email = request_data["email"]
-    password = request_data["password"]
+    username = request_data["username"]
     user = User.objects.filter(username=username)
     if user:
         raise AlreadyExistsError(f"{username} already exists. Try a different username.")
-    user = User.objects.create_user(username, email, password)
-    user.save()
-    response_data["message"] = f"User {email} successfully created."
-    serializer = UserSerializer(user)
-    return JsonResponse(serializer.data, status=CREATED)
+    serializer = UserSerializer(data=request_data)
+    if serializer.is_valid():
+        serializer.save()
+        return JsonResponse(serializer.data, status=CREATED)
+    else:
+        raise InternalServerError(serializer.errors)
+
+@api_view(["GET", "PUT", "DELETE"])
+def user_detail(request, pk):
+    try:
+        user = User.objects.get(pk=pk)
+        serializer = UserSerializer(user)
+        if request.method == "GET":
+            return JsonResponse(serializer.data, status=OK)
+        if request.method == "DELETE":
+            user.delete()
+            return HttpResponse(status=NO_CONTENT)
+        if request.method == "PUT":
+            request_data = JSONParser().parse(request)
+            serializer = UserSerializer(user, data=request_data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(serializer.data, status=OK)
+            else:
+                raise InternalServerError(serializer.errors)
+    except User.DoesNotExist:
+        raise NotFoundError(f"User with id=[{pk}] not found.")
