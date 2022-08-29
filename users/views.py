@@ -1,18 +1,16 @@
-from http.client import CREATED, NO_CONTENT, OK
+from http.client import CREATED
 from django.contrib.auth.models import User
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from rest_framework.parsers import JSONParser
-from myproduct.custom_exceptions import AlreadyExistsError, NotFoundError, BadRequestError
+from myproduct.custom_exceptions import AlreadyExistsError, BadRequestError
 from .serializers import UserSerializer, UserAPISerializer
 from django.contrib.auth.hashers import make_password
-from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics
-from rest_framework import filters
+from rest_framework import generics, filters
 
 # Create your views here.
-class UserListView(generics.ListAPIView):
+class UserView(generics.ListCreateAPIView):
 
     permission_classes = [IsAuthenticated & DjangoModelPermissions]
     queryset = User.objects.all()
@@ -20,11 +18,6 @@ class UserListView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['username', 'email']
     search_fields = ['first_name', 'last_name']
-
-class CreateUserView(APIView):
-
-    permission_classes = [IsAuthenticated & DjangoModelPermissions]
-    queryset = User.objects.all()
 
     def post(self, request):
         request_data = JSONParser().parse(request)
@@ -45,33 +38,8 @@ class CreateUserView(APIView):
         else:
             raise BadRequestError(serializer.errors)
 
-class UserDetailView(APIView):
+class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     permission_classes = [IsAuthenticated & DjangoModelPermissions]
     queryset = User.objects.all()
-
-    def get_object(self, username):
-        try:
-            return User.objects.get(username=username)
-        except User.DoesNotExist:
-            raise NotFoundError(f"User with username=[{username}] not found.")
-
-    def get(self, request, username):
-        user = self.get_object(username)
-        serializer = UserAPISerializer(user)
-        return JsonResponse(serializer.data, status=OK)
-
-    def put(self, request, username):
-        user = self.get_object(username)
-        request_data = JSONParser().parse(request)
-        serializer = UserAPISerializer(user, data=request_data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return JsonResponse(serializer.data, status=OK)
-        else:
-            raise BadRequestError(serializer.errors)
-
-    def delete(self, request, username):
-        user = self.get_object(username)
-        user.delete()
-        return HttpResponse(status=NO_CONTENT)
+    serializer_class = UserAPISerializer
