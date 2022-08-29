@@ -14,6 +14,7 @@ from rest_framework import filters
 # Create your views here.
 class UserListView(generics.ListAPIView):
 
+    permission_classes = [IsAuthenticated & DjangoModelPermissions]
     queryset = User.objects.all()
     serializer_class = UserAPISerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
