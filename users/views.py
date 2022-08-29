@@ -3,12 +3,23 @@ from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
 from rest_framework.parsers import JSONParser
 from myproduct.custom_exceptions import AlreadyExistsError, NotFoundError, BadRequestError
-from .serializers import UserSerializer
+from .serializers import UserSerializer, UserAPISerializer
 from django.contrib.auth.hashers import make_password
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import generics
+from rest_framework import filters
 
 # Create your views here.
+class UserListView(generics.ListAPIView):
+
+    queryset = User.objects.all()
+    serializer_class = UserAPISerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['username', 'email']
+    search_fields = ['first_name', 'last_name']
+
 class CreateUserView(APIView):
 
     permission_classes = [IsAuthenticated & DjangoModelPermissions]
@@ -28,7 +39,8 @@ class CreateUserView(APIView):
         serializer = UserSerializer(data=request_data)
         if serializer.is_valid():
             serializer.save()
-            return JsonResponse(serializer.data, status=CREATED)
+            user_api_serializer = UserAPISerializer(serializer.data)
+            return JsonResponse(user_api_serializer.data, status=CREATED)
         else:
             raise BadRequestError(serializer.errors)
 
@@ -45,13 +57,13 @@ class UserDetailView(APIView):
 
     def get(self, request, username):
         user = self.get_object(username)
-        serializer = UserSerializer(user)
+        serializer = UserAPISerializer(user)
         return JsonResponse(serializer.data, status=OK)
 
     def put(self, request, username):
         user = self.get_object(username)
         request_data = JSONParser().parse(request)
-        serializer = UserSerializer(user, data=request_data)
+        serializer = UserAPISerializer(user, data=request_data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data, status=OK)
