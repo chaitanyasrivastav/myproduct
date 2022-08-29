@@ -1,9 +1,10 @@
 from http.client import CREATED, NO_CONTENT, OK
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
 from rest_framework.parsers import JSONParser
 from myproduct.custom_exceptions import AlreadyExistsError, NotFoundError, InternalServerError, BadRequestError
 from .serializers import UserSerializer
+from django.contrib.auth.hashers import make_password
 from rest_framework.decorators import api_view
 
 # Create your views here.
@@ -12,16 +13,13 @@ def create_user(request):
     request_data = JSONParser().parse(request)
     username = request_data["username"]
     user_type = request_data["user_type"]
+    password = request_data["password"]
     user = User.objects.filter(username=username)
-    group = None
     if user:
         raise AlreadyExistsError(f"{username} already exists. Try a different username.")
-    try:
-        group = Group.objects.get(name=user_type)
-    except Group.DoesNotExist:
-        raise NotFoundError(f"Group with name=[{user_type}] not found.")
-    request_data["groups"] = [group.pk]
+    request_data["groups"] = [user_type]
     request_data["is_staff"] = True
+    request_data["password"] = make_password(password)
     serializer = UserSerializer(data=request_data)
     if serializer.is_valid():
         serializer.save()
