@@ -2,7 +2,7 @@ from http.client import CREATED, NO_CONTENT, OK
 from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
 from rest_framework.parsers import JSONParser
-from myproduct.custom_exceptions import AlreadyExistsError, NotFoundError, InternalServerError, BadRequestError
+from myproduct.custom_exceptions import AlreadyExistsError, NotFoundError, BadRequestError
 from .serializers import UserSerializer
 from django.contrib.auth.hashers import make_password
 from rest_framework.decorators import api_view
@@ -25,7 +25,7 @@ def create_user(request):
         serializer.save()
         return JsonResponse(serializer.data, status=CREATED)
     else:
-        raise InternalServerError(serializer.errors)
+        raise BadRequestError(serializer.errors)
 
 @api_view(["GET", "PUT", "DELETE"])
 def user_detail(request, username):
