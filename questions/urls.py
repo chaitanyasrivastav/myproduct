@@ -1,7 +1,9 @@
 from django.urls import path
-from . import views
+from .views import (
+    CreateQuestionView, QuestionDetailView
+)
 
 urlpatterns = [
-    path('', views.CreateQuestionView.as_view(), name='create_question'),
-    path('<str:pk>', views.QuestionDetailView.as_view(), name='question_detail'),
+    path('', CreateQuestionView.as_view(), name='create_question'),
+    path('<str:pk>', QuestionDetailView.as_view(), name='question_detail'),
 ]

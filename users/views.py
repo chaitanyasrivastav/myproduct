@@ -21,12 +21,8 @@ class UserView(generics.ListCreateAPIView):
 
     def post(self, request):
         request_data = JSONParser().parse(request)
-        username = request_data["username"]
         user_type = request_data["user_type"]
         password = request_data["password"]
-        user = User.objects.filter(username=username)
-        if user:
-            raise AlreadyExistsError(f"{username} already exists. Try a different username.")
         request_data["groups"] = [user_type]
         request_data["is_staff"] = True
         request_data["password"] = make_password(password)
