@@ -1,4 +1,4 @@
-from http.client import CREATED
+from http.client import CREATED, OK
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from rest_framework.parsers import JSONParser
@@ -43,3 +43,13 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated & DjangoModelPermissions]
     queryset = User.objects.all()
     serializer_class = UserAPISerializer
+
+    def put(self, request, pk):
+        request_data = JSONParser().parse(request)
+        user = self.get_object()
+        serializer = UserAPISerializer(user, data=request_data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=OK)
+        else:
+            raise BadRequestError(serializer.errors)
