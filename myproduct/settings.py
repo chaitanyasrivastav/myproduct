@@ -32,8 +32,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'questions.apps.QuestionsConfig',
-    'choices.apps.ChoicesConfig',
-    'answers.apps.AnswersConfig',
+    'assessments.apps.AssessmentsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -2,7 +2,7 @@ from http.client import CREATED, OK
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from rest_framework.parsers import JSONParser
-from myproduct.custom_exceptions import AlreadyExistsError, BadRequestError
+from myproduct.custom_exceptions import BadRequestError
 from .serializers import UserSerializer, UserAPISerializer
 from django.contrib.auth.hashers import make_password
 from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions

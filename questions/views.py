@@ -2,8 +2,8 @@ from http.client import CREATED, OK
 from django.http import JsonResponse
 from rest_framework.parsers import JSONParser
 from myproduct.custom_exceptions import BadRequestError
-from .models import Question
-from .serializers import QuestionSerializer
+from .models import Question, Answer, Choice
+from .serializers import QuestionSerializer, AnswerSerializer, ChoiceSerializer
 from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
 from rest_framework import generics, filters
 
@@ -60,6 +60,122 @@ class QuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
         request_data = JSONParser().parse(request)
         question = self.get_object()
         serializer = QuestionSerializer(question, data=request_data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=OK)
+        else:
+            raise BadRequestError(serializer.errors)
+
+class CreateAnswerView(generics.ListCreateAPIView):
+
+    permission_classes = [IsAuthenticated & DjangoModelPermissions]
+    queryset = Answer.objects.all()
+    serializer_class = AnswerSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return super().get_queryset()
+        else:
+            author_id = self.request.query_params.get("author", None)
+            if not author_id:
+                author_id = self.request.user.pk
+            if int(author_id) == self.request.user.pk:
+                question_id = self.kwargs["question_id"]
+                return Answer.objects.filter(question=question_id, author=user.pk)
+            else:
+                raise BadRequestError(f"You dont have permission to view this resource as you dont own it.")
+
+    def post(self, request, question_id):
+        request_data = JSONParser().parse(request)
+        request_data["author"] = request.user.pk
+        request_data["question"] = question_id
+        serializer = AnswerSerializer(data=request_data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=CREATED)
+        else:
+            raise BadRequestError(serializer.errors)
+
+class AnswerDetailView(generics.RetrieveUpdateDestroyAPIView):
+
+    permission_classes = [IsAuthenticated & DjangoModelPermissions]
+    queryset = Answer.objects.all()
+    serializer_class = AnswerSerializer
+
+    def get_object(self):
+        user = self.request.user
+        if user.is_superuser:
+            return super().get_object()
+        else:
+            try:
+                question_id = self.kwargs["question_id"]
+                return Answer.objects.get(pk=self.kwargs[self.lookup_field], question=question_id, author=user.pk)
+            except Exception:
+                raise BadRequestError(f"You dont have permission to view this resource as you dont own it.")
+
+    def put(self, request, question_id, pk):
+        request_data = JSONParser().parse(request)
+        answer = self.get_object()
+        serializer = AnswerSerializer(answer, data=request_data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=OK)
+        else:
+            raise BadRequestError(serializer.errors)
+
+class CreateChoiceView(generics.ListCreateAPIView):
+
+    permission_classes = [IsAuthenticated & DjangoModelPermissions]
+    queryset = Choice.objects.all()
+    serializer_class = ChoiceSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return super().get_queryset()
+        else:
+            author_id = self.request.query_params.get("author", None)
+            if not author_id:
+                author_id = self.request.user.pk
+            if int(author_id) == self.request.user.pk:
+                question_id = self.kwargs["question_id"]
+                return Choice.objects.filter(question=question_id, author=user.pk)
+            else:
+                raise BadRequestError(f"You dont have permission to view this resource as you dont own it.")
+
+    def post(self, request, question_id):
+        request_data = JSONParser().parse(request)
+        request_data["author"] = request.user.pk
+        request_data["question"] = question_id
+        serializer = ChoiceSerializer(data=request_data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=CREATED)
+        else:
+            raise BadRequestError(serializer.errors)
+
+class ChoiceDetailView(generics.RetrieveUpdateDestroyAPIView):
+
+    permission_classes = [IsAuthenticated & DjangoModelPermissions]
+    queryset = Choice.objects.all()
+    serializer_class = ChoiceSerializer
+
+    def get_object(self):
+        user = self.request.user
+        if user.is_superuser:
+            return super().get_object()
+        else:
+            try:
+                question_id = self.kwargs["question_id"]
+                return Choice.objects.get(pk=self.kwargs[self.lookup_field], question=question_id, author=user.pk)
+            except Exception:
+                raise BadRequestError(f"You dont have permission to view this resource as you dont own it.")
+
+    def put(self, request, question_id, pk):
+        request_data = JSONParser().parse(request)
+        choice = self.get_object()
+        serializer = ChoiceSerializer(choice, data=request_data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data, status=OK)
