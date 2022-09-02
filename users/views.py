@@ -1,24 +1,58 @@
-from http.client import CREATED
+from http.client import CREATED, OK
 from django.contrib.auth.models import User
-from django.http import HttpResponse
-import json
-
-from myproduct.custom_exceptions import MethodNotAllowedError, AlreadyExistsError
+from django.http import JsonResponse
+from rest_framework.parsers import JSONParser
+from myproduct.custom_exceptions import BadRequestError
+from .serializers import UserSerializer, UserAPISerializer
+from django.contrib.auth.hashers import make_password
+from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import generics, filters
 
 # Create your views here.
+class UserView(generics.ListCreateAPIView):
+    '''
+    get: list of users
+    post: create a user
+    '''
+    permission_classes = [IsAuthenticated & DjangoModelPermissions]
+    queryset = User.objects.all()
+    serializer_class = UserAPISerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['username', 'email']
+    search_fields = ['first_name', 'last_name']
 
-def create_user(request):
-    headers = {"Content-Type": "application/json"}
-    response_data = {}
-    if request.method == "POST":
-        request_data = json.loads(request.body)
-        user = User.objects.get(username=request_data["firstName"])
-        if user:
-            raise AlreadyExistsError(f"{user.username} already exists. Try a different username.")
-        user = User.objects.create_user(request_data["firstName"], request_data["email"], request_data["password"])
-        user.last_name = request_data["lastName"]
-        user.save()
-        response_data["message"] = f"User {request_data['email']} successfully created."
-        return HttpResponse(json.dumps(response_data), headers=headers, status=CREATED)
-    else:
-        raise MethodNotAllowedError(f"{request.method} method is not allowed for this endpoint.")
+    def post(self, request):
+        request_data = JSONParser().parse(request)
+        user_type = request_data["user_type"]
+        password = request_data["password"]
+        request_data["groups"] = [user_type]
+        request_data["is_staff"] = True
+        request_data["password"] = make_password(password)
+        serializer = UserSerializer(data=request_data)
+        if serializer.is_valid():
+            serializer.save()
+            user_api_serializer = UserAPISerializer(serializer.data)
+            return JsonResponse(user_api_serializer.data, status=CREATED)
+        else:
+            raise BadRequestError(serializer.errors)
+
+class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
+    '''
+    get: get user
+    put: updates a user
+    delete: deletes a user
+    '''
+    permission_classes = [IsAuthenticated & DjangoModelPermissions]
+    queryset = User.objects.all()
+    serializer_class = UserAPISerializer
+
+    def put(self, request, pk):
+        request_data = JSONParser().parse(request)
+        user = self.get_object()
+        serializer = UserAPISerializer(user, data=request_data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=OK)
+        else:
+            raise BadRequestError(serializer.errors)

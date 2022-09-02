@@ -1,6 +1,7 @@
 from http.client import INTERNAL_SERVER_ERROR
 from django.http import HttpResponse
 import json
+import traceback
 
 
 class CustomViewExceptionMiddleware:
@@ -27,6 +28,7 @@ class CustomViewExceptionMiddleware:
             response_data["errorMessage"] = exception.message
             return HttpResponse(json.dumps(response_data), headers=headers, status=exception.status_code)
         else:
+            print(traceback.print_exc())
             response_data["errorCode"] = "INTERNAL_SERVER_ERROR"
             response_data["errorMessage"] = "Internal Server Error."
             return HttpResponse(json.dumps(response_data), headers=headers, status=INTERNAL_SERVER_ERROR)

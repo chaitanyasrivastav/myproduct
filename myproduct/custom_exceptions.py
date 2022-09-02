@@ -1,17 +1,23 @@
-class MethodNotAllowedError(Exception):
+class BaseException(Exception):
+    def __init__(self, message):
+        self.message = message
+
+class MethodNotAllowedError(BaseException):
     status_code = 405
     error_code = "METHOD_NOT_ALLOWED"
 
-    def __init__(self, message):
-        self.message = message
-
-class AlreadyExistsError(Exception):
+class AlreadyExistsError(BaseException):
     status_code = 409
     error_code = "ALREADY_EXISTS"
 
-    def __init__(self, message):
-        self.message = message
+class BadRequestError(BaseException):
+    status_code = 400
+    error_code = "BAD_REQUEST"
 
-class InternalServerError(Exception):
+class NotFoundError(BaseException):
+    status_code = 404
+    error_code = "NOT_FOUND"
+
+class InternalServerError(BaseException):
     pass
 
