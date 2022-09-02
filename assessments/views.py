@@ -107,16 +107,13 @@ class AssessmentUserCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated & DjangoModelPermissions]
     queryset = AssessmentUserJunction.objects.all()
     serializer_class = AssessmentUserJunctionSerializer
-    # filter_backends = [DjangoFilterBackend]
-    # filterset_fields = ['assessment', 'question']
-
-    # def list(self, request, pk):
-    #     request.session.delete()
-    #     return JsonResponse({"a": 1})
 
     def post(self, request, pk):
         if request.session.session_key is not None:
-            raise BadRequestError(f"Session [{request.session.session_key}] is use for this user.")
+            assessment_id = request.session["assessment_id"]
+            user_id = request.session["user"]
+            if assessment_id == pk and user_id == request.user.pk:
+                raise BadRequestError(f"Session [{request.session.session_key}] is use for this user.")
         request.session.create()
         session_id = request.session.session_key
         request.session["assessment_id"] = pk

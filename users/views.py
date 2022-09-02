@@ -11,7 +11,10 @@ from rest_framework import generics, filters
 
 # Create your views here.
 class UserView(generics.ListCreateAPIView):
-
+    '''
+    get: list of users
+    post: create a user
+    '''
     permission_classes = [IsAuthenticated & DjangoModelPermissions]
     queryset = User.objects.all()
     serializer_class = UserAPISerializer
@@ -35,7 +38,11 @@ class UserView(generics.ListCreateAPIView):
             raise BadRequestError(serializer.errors)
 
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
-
+    '''
+    get: get user
+    put: updates a user
+    delete: deletes a user
+    '''
     permission_classes = [IsAuthenticated & DjangoModelPermissions]
     queryset = User.objects.all()
     serializer_class = UserAPISerializer

@@ -71,6 +71,7 @@ class CreateAnswerView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated & DjangoModelPermissions]
     queryset = Answer.objects.all()
     serializer_class = AnswerSerializer
+    # filter_backends = [filters.SearchFilter]
 
     def get_queryset(self):
         user = self.request.user
@@ -129,6 +130,7 @@ class CreateChoiceView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated & DjangoModelPermissions]
     queryset = Choice.objects.all()
     serializer_class = ChoiceSerializer
+    filter_backends = [filters.SearchFilter]
 
     def get_queryset(self):
         user = self.request.user
