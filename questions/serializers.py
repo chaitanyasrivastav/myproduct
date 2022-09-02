@@ -16,3 +16,8 @@ class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
         fields = "__all__"
+
+class ChoiceContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Choice
+        fields = ["id", "content"]
