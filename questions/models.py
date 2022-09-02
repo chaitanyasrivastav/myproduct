@@ -11,15 +11,6 @@ class Question(models.Model):
     def __str__(self):
         return self.title
 
-class Answer(models.Model):
-    content = models.CharField(max_length=250)
-    description = models.TextField()
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.content
-
 class Choice(models.Model):
     content = models.CharField(max_length=250, null=True)
     question = models.ForeignKey(Question, related_name='options', on_delete=models.CASCADE)
